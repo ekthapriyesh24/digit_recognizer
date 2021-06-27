@@ -50,12 +50,14 @@ def load_test_data(test_X,test_y):
 def key_sort(val):
     return val[1]
 
-def preprocess_data():
-    image=cv2.imread('img_9.jpg')
+def preprocess_data(filename):
+    image=cv2.imread(filename)
     #convert image to grayscale
     grey=cv2.cvtColor(image.copy(),cv2.COLOR_BGR2GRAY)
     #set pixel value < 75-> 0,else 0.Then invert 0->1,1->0 
+
     _,thresh=cv2.threshold(grey.copy(),75,255,cv2.THRESH_BINARY_INV)
+
     #find the boundaries of digits,return list of boundaries
     # CV2.CHAIN_APPROX_SIMPLE used for only returning the boundaries of the formed shape
     #CV2.RETR_EXTERNAL for extracting only external contours
@@ -82,9 +84,9 @@ def preprocess_data():
 
     preprocessed_digits.sort(key=key_sort)
     ans=[x[0] for x in preprocessed_digits]
-    # for x in ans:
-    #     plt.imshow(x,cmap="gray")
-    #     plt.show()
+    for x in ans:
+        plt.imshow(x,cmap="gray")
+        plt.show()
     return np.array(ans)
 
 def vectorized_result(j):
@@ -195,20 +197,20 @@ class Network(object):
     return evaluation_cost,evaluation_accuracy,training_cost,training_accuracy
 
   def update_mini_batch(self,mini_batch,eta,lmbda,n):
-    nabla_b=[np.zeros(b.shape) for b in self.biases]
-    nabla_w=[np.zeros(w.shape) for w in self.weights]
+    delta_b=[np.zeros(b.shape) for b in self.biases]
+    delta_w=[np.zeros(w.shape) for w in self.weights]
  
     for x,y in mini_batch:
-      delta_nabla_b,delta_nabla_w=self.backdrop(x,y)
-      nabla_b=[nb+dnb for nb,dnb in zip(nabla_b,delta_nabla_b)]
-      nabla_w=[nw+dnw for nw,dnw in zip(nabla_w,delta_nabla_w)]    
+      error_delta_b,error_delta_w=self.backdrop(x,y)
+      delta_b=[nb+dnb for nb,dnb in zip(delta_b,error_delta_b)]
+      delta_w=[nb+dnb for nb,dnb in zip(delta_w,error_delta_w)]    
 
-    self.weights=[(1-eta*(lmbda/n))*w-(eta/len(mini_batch))*nw for w,nw in zip(self.weights,nabla_w)]
-    self.biases=[b-(eta/len(mini_batch))*nb for b,nb in zip(self.biases,nabla_b)]
+    self.weights=[(1-eta*(lmbda/n))*w-(eta/len(mini_batch))*nw for w,nw in zip(self.weights,delta_w)]
+    self.biases=[b-(eta/len(mini_batch))*nb for b,nb in zip(self.biases,delta_b)]
   
   def backdrop(self,x,y):
-    nabla_b=[np.zeros(b.shape) for b in self.biases]
-    nabla_w=[np.zeros(w.shape) for w in self.weights]
+    delta_b=[np.zeros(b.shape) for b in self.biases]
+    delta_w=[np.zeros(w.shape) for w in self.weights]
 
     activation=x
     activations=[x]
@@ -221,16 +223,16 @@ class Network(object):
       activations.append(activation)
 
     delta=(self.cost).delta(zs[-1],activations[-1],y)
-    nabla_b[-1]=delta
-    nabla_w[-1]=np.dot(delta,activations[-2].transpose())
+    delta_b[-1]=delta
+    delta_w[-1]=np.dot(delta,activations[-2].transpose())
 
     for l in range(2,self.num_layers):
       z=zs[-l]
       sp=sigmoid_prime(z)
       delta=np.dot(self.weights[-l+1].transpose(),delta)*sp
-      nabla_b[-l]=delta
-      nabla_w[-l]=np.dot(delta,activations[-l-1].transpose())
-    return (nabla_b,nabla_w)
+      delta_b[-l]=delta
+      delta_w[-l]=np.dot(delta,activations[-l-1].transpose())
+    return (delta_b,delta_w)
 
   def accuracy(self,data,convert=False):
     if convert:
@@ -286,15 +288,35 @@ net.SGD(training_data,5,10,0.5,evaluation_data=test_data,monitor_training_accura
 
 #testing on mobile snapshots
 training_data,validation_data,_=load_data()
-test_data_X=preprocess_data()
-test_data_y=[0,5,2,2,1,8,5,9]
+
+#for img_2 best  accuracy-7/8
+# test_data_X=preprocess_data('img_2.jpg')
+# test_data_y=[0,5,2,2,1,8,5,9]
+
+# for img_4-best accuracy-
+# test_data_X=preprocess_data('img_4.jpg')
 # test_data_y=[2,3,1,4,9,8,7,6,5,1,4,7]
-# test_data_y=[2,3,6,5]
-# test_data_y=[2,3,9,4]
+
+# for img_10-best accuracy-11/16
+# test_data_X=preprocess_data('img_10.jpg')
+# test_data_y=[1,2,4,5,9,7,1,2,3,4,6,2,4,5,9,8]
+
+# for img_11-best accuracy-17/21
+# test_data_X=preprocess_data('img_11.jpg')
+# test_data_y=[1,2,3,4,5,6,7,8,9,4,7,8,4,3,5,8,4,1,6,3,2]
+
+#for img_13-best accuracy-19/21
+# test_data_X=preprocess_data('img_13.jpg')
+# test_data_y=[1,2,3,4,5,6,7,8,9,4,3,2,1,0,0,2,4,0,1,2,3]
+
+# for img_15-best accuracy-17/20
+test_data_X=preprocess_data('img_15.jpg')
+test_data_y=[0,1,2,3,6,5,0,1,4,5,6,9,8,7,0,2,3,0,2,8]
+
 test_data=load_test_data(test_data_X,test_data_y)
 training_data=list(training_data)
 validation_data=list(validation_data)
 test_data=list(test_data)
-net=Network([784,30,10],cost=CrossEntropyCost)
+net=Network([784,100,10],cost=CrossEntropyCost)
 net.large_weight_initializer()
-net.SGD(training_data,30,10,0.5,lmbda=5.0,evaluation_data=test_data,monitor_training_accuracy=True,monitor_evaluation_accuracy=True,monitor_training_cost=True,monitor_evaluation_cost=True)
+net.SGD(training_data,30,10,1,lmbda=5,evaluation_data=test_data,monitor_training_accuracy=True,monitor_evaluation_accuracy=True,monitor_training_cost=True,monitor_evaluation_cost=True)
