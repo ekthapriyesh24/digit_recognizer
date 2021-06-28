@@ -274,15 +274,26 @@ class Network(object):
     plt.legend(loc="lower right")
     plt.show()
 
-#testing on mnist data
+#testing on mnist data 
 '''
 training_data,validation_data,test_data=load_data()
 training_data=list(training_data)
 test_data=list(test_data)
 validation_data=list(validation_data)
-net = Network([784, 30, 10],cost=CrossEntropyCost)
+net = Network([784, 100, 10],cost=QuadraticCost)
 net.large_weight_initializer()
-net.SGD(training_data,5,10,0.5,evaluation_data=test_data,monitor_training_accuracy=True,monitor_evaluation_accuracy=True,monitor_training_cost=True,monitor_evaluation_cost=True)
+net.SGD(training_data,30,10,3,evaluation_data=test_data,monitor_training_accuracy=True,monitor_evaluation_accuracy=True,monitor_training_cost=True,monitor_evaluation_cost=True)
+'''
+
+#testing on mnist data with Cost Entropy Cost,L2 regulariztion and better weight inializers  
+'''
+training_data,validation_data,test_data=load_data()
+training_data=list(training_data)
+test_data=list(test_data)
+validation_data=list(validation_data)
+net = Network([784, 100, 10],cost=CrossEntropyCost)
+net.default_weight_initializer()
+net.SGD(training_data,30,10,1,lmbda=5,evaluation_data=test_data,monitor_training_accuracy=True,monitor_evaluation_accuracy=True,monitor_training_cost=True,monitor_evaluation_cost=True)
 '''
 
 #testing on mobile snapshots
